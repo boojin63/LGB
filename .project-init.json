@@ -1,0 +1,9 @@
+{
+  "serviceName": "LGB",
+  "serviceSlug": "lgb",
+  "packageName": "com.LGB",
+  "projectType": "spring-api",
+  "projectTypeDisplay": "Spring Boot API",
+  "buildTool": "gradle",
+  "description": "기본 Spring Boot REST API 프로젝트"
+}

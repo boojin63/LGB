@@ -1,0 +1,16 @@
+.git
+.github
+.gradle
+build
+out
+target
+node_modules
+.env
+.env.*
+*.log
+.idea
+.vscode
+.DS_Store
+docker-compose*.yml
+README.md
+docs

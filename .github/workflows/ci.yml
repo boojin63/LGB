@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  spring-check:
+    name: Spring Project Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Detect project structure
+        run: |
+          echo "Repository structure:"
+          ls -la
+
+      - name: Make Gradle wrapper executable
+        if: ${{ hashFiles('gradlew') != '' }}
+        run: chmod +x ./gradlew
+
+      - name: Build with Gradle wrapper
+        if: ${{ hashFiles('gradlew') != '' }}
+        run: ./gradlew clean build
+
+      - name: Make Maven wrapper executable
+        if: ${{ hashFiles('mvnw') != '' }}
+        run: chmod +x ./mvnw
+
+      - name: Build with Maven wrapper
+        if: ${{ hashFiles('mvnw') != '' }}
+        run: ./mvnw clean verify
+
+      - name: No build wrapper found
+        if: ${{ hashFiles('gradlew') == '' && hashFiles('mvnw') == '' }}
+        run: |
+          echo "No Gradle or Maven wrapper found."
+          echo "This template repository may not contain an actual Spring project yet."
+          echo "When a real project is created, add gradlew or mvnw."

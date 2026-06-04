@@ -1,0 +1,17 @@
+.gradle
+build
+target
+out
+
+.env
+.env.*
+!.env.example
+
+*.log
+
+.idea
+.vscode
+.DS_Store
+
+backup_*.sql
+*.dump
