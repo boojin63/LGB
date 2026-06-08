@@ -1,61 +1,134 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Button, Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/hooks/useAuth';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+type RouteTarget = {
+  title: string;
+  description: string;
+  webPath: string;
+  nativePath: string;
+};
+
+const MAIN_FEATURES: RouteTarget[] = [
+  {
+    title: '채팅',
+    description: '학과 공지방과 대화 흐름을 확인합니다.',
+    webPath: '/chat',
+    nativePath: '/chat/index',
+  },
+  {
+    title: 'AI 챗봇',
+    description: '공지, 일정, 예약, 투표 도움말을 질문합니다.',
+    webPath: '/chatbot',
+    nativePath: '/chatbot/index',
+  },
+  {
+    title: '투표',
+    description: '진행 중인 투표에 참여하고 결과를 확인합니다.',
+    webPath: '/polls',
+    nativePath: '/polls/index',
+  },
+];
+
+const SUPPORT_FEATURES: RouteTarget[] = [
+  {
+    title: '공지',
+    description: '학과 공지사항',
+    webPath: '/notices',
+    nativePath: '/notices',
+  },
+  {
+    title: '일정',
+    description: '학과 일정',
+    webPath: '/calendar',
+    nativePath: '/calendar/index',
+  },
+  {
+    title: '예약',
+    description: '내 예약 확인',
+    webPath: '/reservations',
+    nativePath: '/reservations/index',
+  },
+  {
+    title: '자원',
+    description: '예약 가능 자원',
+    webPath: '/resources',
+    nativePath: '/resources/index',
+  },
+];
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const theme = useTheme();
+  const { user, role, logout } = useAuth();
+
+  async function handleLogout() {
+    await logout();
+    router.replace('/login');
+  }
+
+  function openRoute(target: RouteTarget) {
+    if (Platform.OS === 'web') {
+      window.location.assign(target.webPath);
+      return;
+    }
+
+    router.push(target.nativePath as never);
+  }
+
+  function renderFeatureCard(target: RouteTarget, primary: boolean) {
+    return (
+      <Pressable
+        key={target.webPath}
+        style={({ pressed }) => [
+          primary ? styles.mainCard : styles.supportCard,
+          { backgroundColor: primary ? '#2563eb' : theme.backgroundElement },
+          pressed && styles.pressed,
+        ]}
+        onPress={() => openRoute(target)}>
+        <ThemedText type="smallBold" style={primary ? styles.mainCardText : undefined}>
+          {target.title}
+        </ThemedText>
+        <ThemedText type="small" style={primary ? styles.mainCardText : undefined}>
+          {target.description}
+        </ThemedText>
+      </Pressable>
+    );
+  }
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+        <ScrollView contentContainerStyle={styles.content}>
+          <ThemedView style={styles.header}>
+            <ThemedText type="title">LGB Project</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {user?.name ?? '사용자'} · {role ?? 'ROLE'}
+            </ThemedText>
+          </ThemedView>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+          <ThemedView style={styles.section}>
+            <ThemedText type="subtitle">내일 시연 핵심 기능</ThemedText>
+            {MAIN_FEATURES.map((feature) => renderFeatureCard(feature, true))}
+          </ThemedView>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+          <ThemedView style={styles.section}>
+            <ThemedText type="subtitle">보조 기능</ThemedText>
+            <ThemedView style={styles.supportGrid}>
+              {SUPPORT_FEATURES.map((feature) => renderFeatureCard(feature, false))}
+            </ThemedView>
+          </ThemedView>
 
-        {Platform.OS === 'web' && <WebBadge />}
+          <ThemedView style={styles.logoutWrap}>
+            <Button title="로그아웃" onPress={handleLogout} />
+          </ThemedView>
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -64,35 +137,50 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     flexDirection: 'row',
+    justifyContent: 'center',
   },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
+    paddingBottom: BottomTabInset + Spacing.three,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
+  content: {
     gap: Spacing.four,
+    padding: Spacing.four,
   },
-  title: {
-    textAlign: 'center',
+  header: {
+    gap: Spacing.one,
   },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
+  section: {
     gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  },
+  mainCard: {
+    borderRadius: Spacing.three,
+    gap: Spacing.one,
+    padding: Spacing.four,
+  },
+  mainCardText: {
+    color: '#ffffff',
+  },
+  supportGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.three,
+  },
+  supportCard: {
+    borderRadius: Spacing.three,
+    flexBasis: '47%',
+    flexGrow: 1,
+    gap: Spacing.one,
+    minHeight: 92,
+    padding: Spacing.three,
+  },
+  logoutWrap: {
+    borderRadius: Spacing.three,
+    overflow: 'hidden',
+  },
+  pressed: {
+    opacity: 0.75,
   },
 });
