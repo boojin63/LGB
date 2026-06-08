@@ -43,7 +43,7 @@ export default function NoticeListScreen() {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('공지 목록을 불러오지 못했습니다.');
+        setErrorMessage('Notices could not be loaded. Check the backend and try again.');
       }
     } finally {
       setIsInitialLoading(false);
@@ -104,12 +104,12 @@ export default function NoticeListScreen() {
               </ThemedText>
             )}
             <ThemedText type="small" themeColor="textSecondary">
-              조회 {item.viewCount}
+              Views {item.viewCount}
             </ThemedText>
           </ThemedView>
           <ThemedText type="smallBold">{item.title}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {item.authorName} · {formatDateTime(item.createdAt)}
+            {item.authorName} - {formatDateTime(item.createdAt)}
           </ThemedText>
         </ThemedView>
       </Pressable>
@@ -120,7 +120,7 @@ export default function NoticeListScreen() {
     return (
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
-          <ThemedText type="subtitle">공지 목록 로딩 중...</ThemedText>
+          <ThemedText type="subtitle">Loading notices...</ThemedText>
         </SafeAreaView>
       </ThemedView>
     );
@@ -130,9 +130,9 @@ export default function NoticeListScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.header}>
-          <ThemedText type="subtitle">공지사항</ThemedText>
+          <ThemedText type="subtitle">Notices</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            학과 공지 목록입니다.
+            Department announcements and important updates.
           </ThemedText>
         </ThemedView>
 
@@ -149,18 +149,16 @@ export default function NoticeListScreen() {
           keyExtractor={(item) => String(item.id)}
           renderItem={renderNotice}
           contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
           ListEmptyComponent={
             <ThemedView type="backgroundElement" style={styles.messageBox}>
-              <ThemedText type="small">등록된 공지가 없습니다.</ThemedText>
+              <ThemedText type="small">No notices are available.</ThemedText>
             </ThemedView>
           }
           ListFooterComponent={
             isLoadingMore ? (
               <ThemedText type="small" style={styles.footerText}>
-                더 불러오는 중...
+                Loading more...
               </ThemedText>
             ) : null
           }

@@ -25,7 +25,7 @@ export default function NoticeDetailScreen() {
   const loadNotice = useCallback(async () => {
     if (!noticeId) {
       setNotice(null);
-      setErrorMessage('잘못된 공지 ID입니다.');
+      setErrorMessage('This notice link is not valid.');
       setIsNoticeLoading(false);
       return;
     }
@@ -42,7 +42,7 @@ export default function NoticeDetailScreen() {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('공지 상세를 불러오지 못했습니다.');
+        setErrorMessage('Notice detail could not be loaded.');
       }
     } finally {
       setIsNoticeLoading(false);
@@ -77,7 +77,7 @@ export default function NoticeDetailScreen() {
     return (
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
-          <ThemedText type="subtitle">공지 상세 로딩 중...</ThemedText>
+          <ThemedText type="subtitle">Loading notice...</ThemedText>
         </SafeAreaView>
       </ThemedView>
     );
@@ -94,7 +94,7 @@ export default function NoticeDetailScreen() {
               pressed && styles.pressed,
             ]}
             onPress={handleBack}>
-            <ThemedText type="smallBold">뒤로가기</ThemedText>
+            <ThemedText type="smallBold">Back</ThemedText>
           </Pressable>
 
           {errorMessage && (
@@ -116,14 +116,10 @@ export default function NoticeDetailScreen() {
               <ThemedText type="subtitle">{notice.title}</ThemedText>
 
               <ThemedView type="backgroundElement" style={styles.metaBox}>
-                <ThemedText type="small">작성자: {notice.author.name}</ThemedText>
-                <ThemedText type="small">조회수: {notice.viewCount}</ThemedText>
-                <ThemedText type="small">
-                  작성일: {formatDateTime(notice.createdAt)}
-                </ThemedText>
-                <ThemedText type="small">
-                  수정일: {formatDateTime(notice.updatedAt)}
-                </ThemedText>
+                <ThemedText type="small">Author: {notice.author.name}</ThemedText>
+                <ThemedText type="small">Views: {notice.viewCount}</ThemedText>
+                <ThemedText type="small">Created: {formatDateTime(notice.createdAt)}</ThemedText>
+                <ThemedText type="small">Updated: {formatDateTime(notice.updatedAt)}</ThemedText>
               </ThemedView>
 
               <ThemedView type="backgroundElement" style={styles.bodyBox}>

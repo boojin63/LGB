@@ -30,7 +30,7 @@ export default function ReservationListScreen() {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Failed to load reservations.');
+        setErrorMessage('Reservations could not be loaded. Check the backend and try again.');
       }
     } finally {
       setIsInitialLoading(false);
@@ -65,10 +65,14 @@ export default function ReservationListScreen() {
   function renderReservation({ item }: { item: ReservationItem }) {
     return (
       <ThemedView type="backgroundElement" style={styles.card}>
+        <ThemedView type="backgroundElement" style={styles.cardHeader}>
+          <ThemedText type="smallBold" style={styles.statusText}>
+            {item.status}
+          </ThemedText>
+        </ThemedView>
         <ThemedText type="smallBold">{item.resource.name}</ThemedText>
         <ThemedText type="small">Start: {formatDateTime(item.startAt)}</ThemedText>
         <ThemedText type="small">End: {formatDateTime(item.endAt)}</ThemedText>
-        <ThemedText type="small">Status: {item.status}</ThemedText>
         <ThemedText type="small">Purpose: {item.purpose}</ThemedText>
         {item.rejectReason && (
           <ThemedText type="small" style={styles.errorText}>
@@ -163,8 +167,14 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: Spacing.three,
-    gap: Spacing.one,
+    gap: Spacing.two,
     padding: Spacing.three,
+  },
+  cardHeader: {
+    alignItems: 'flex-start',
+  },
+  statusText: {
+    color: '#2563eb',
   },
   messageBox: {
     borderRadius: Spacing.three,

@@ -8,14 +8,12 @@ import { ApiError } from '@/api/types';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/useAuth';
 
 const PAGE_SIZE = 10;
 
 export default function PollListScreen() {
   const router = useRouter();
-  const theme = useTheme();
   const { isAuthenticated, isLoading } = useAuth();
   const [polls, setPolls] = useState<PollListItem[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -32,7 +30,7 @@ export default function PollListScreen() {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Failed to load polls.');
+        setErrorMessage('Polls could not be loaded. Check the backend and try again.');
       }
     } finally {
       setIsInitialLoading(false);
@@ -68,19 +66,29 @@ export default function PollListScreen() {
   }
 
   function renderPoll({ item }: { item: PollListItem }) {
+    const open = item.status === 'OPEN';
+
     return (
-      <Pressable
-        style={({ pressed }) => [
-          styles.card,
-          { backgroundColor: theme.backgroundElement },
-          pressed && styles.pressed,
-        ]}
-        onPress={() => handleOpenPoll(item.id)}>
-        <ThemedText type="smallBold">{item.title}</ThemedText>
-        <ThemedText type="small">Status: {item.status}</ThemedText>
-        <ThemedText type="small">Starts: {formatDateTime(item.startsAt)}</ThemedText>
-        <ThemedText type="small">Ends: {formatDateTime(item.endsAt)}</ThemedText>
-        <ThemedText type="small">Voted: {item.hasVoted ? 'Yes' : 'No'}</ThemedText>
+      <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]} onPress={() => handleOpenPoll(item.id)}>
+        <ThemedView style={styles.cardHeader}>
+          <ThemedView style={[styles.badge, open ? styles.openBadge : styles.closedBadge]}>
+            <ThemedText type="smallBold" style={open ? styles.openBadgeText : styles.closedBadgeText}>
+              {item.status}
+            </ThemedText>
+          </ThemedView>
+          <ThemedText type="smallBold" style={item.hasVoted ? styles.votedText : styles.notVotedText}>
+            {item.hasVoted ? 'Voted' : 'Not voted'}
+          </ThemedText>
+        </ThemedView>
+        <ThemedText type="smallBold" style={styles.pollTitle}>
+          {item.title}
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          {formatDateTime(item.startsAt)} - {formatDateTime(item.endsAt)}
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Results: {item.resultVisible ? 'Available when allowed' : 'Not public yet'}
+        </ThemedText>
       </Pressable>
     );
   }
@@ -99,7 +107,12 @@ export default function PollListScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.header}>
-          <ThemedText type="subtitle">Polls</ThemedText>
+          <ThemedText type="subtitle" style={styles.title}>
+            Polls
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            Join active student polls and check results when they are visible.
+          </ThemedText>
         </ThemedView>
 
         {errorMessage && (
@@ -115,12 +128,10 @@ export default function PollListScreen() {
           keyExtractor={(item) => String(item.id)}
           renderItem={renderPoll}
           contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
           ListEmptyComponent={
             <ThemedView type="backgroundElement" style={styles.messageBox}>
-              <ThemedText type="small">No polls are available.</ThemedText>
+              <ThemedText type="small">No active or recent polls are available.</ThemedText>
             </ThemedView>
           }
         />
@@ -152,17 +163,58 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
   },
   header: {
+    gap: Spacing.one,
     paddingBottom: Spacing.three,
     paddingTop: Spacing.four,
+  },
+  title: {
+    fontSize: 30,
+    lineHeight: 38,
   },
   listContent: {
     gap: Spacing.three,
     paddingBottom: Spacing.four,
   },
   card: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
     borderRadius: Spacing.three,
-    gap: Spacing.one,
+    borderWidth: 1,
+    gap: Spacing.two,
     padding: Spacing.three,
+  },
+  cardHeader: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  badge: {
+    borderRadius: 999,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
+  },
+  openBadge: {
+    backgroundColor: '#dcfce7',
+  },
+  closedBadge: {
+    backgroundColor: '#f1f5f9',
+  },
+  openBadgeText: {
+    color: '#15803d',
+  },
+  closedBadgeText: {
+    color: '#475569',
+  },
+  votedText: {
+    color: '#0f766e',
+  },
+  notVotedText: {
+    color: '#ea580c',
+  },
+  pollTitle: {
+    fontSize: 17,
+    lineHeight: 24,
   },
   messageBox: {
     borderRadius: Spacing.three,

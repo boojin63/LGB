@@ -31,7 +31,7 @@ export default function CalendarListScreen() {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Failed to load calendar events.');
+        setErrorMessage('Calendar events could not be loaded. Check the backend and try again.');
       }
     } finally {
       setIsInitialLoading(false);
@@ -81,13 +81,17 @@ export default function CalendarListScreen() {
         ]}
         onPress={() => handleOpenEvent(item.id)}>
         <ThemedView type="backgroundElement" style={styles.eventContent}>
+          <ThemedView type="backgroundElement" style={styles.eventHeader}>
+            <ThemedText type="smallBold" style={styles.eventType}>
+              {item.allDay ? 'ALL DAY' : 'TIMED'}
+            </ThemedText>
+          </ThemedView>
           <ThemedText type="smallBold">{item.title}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             {item.location ?? 'No location'}
           </ThemedText>
           <ThemedText type="small">
-            {item.allDay ? 'All day' : 'Timed'} - {formatDateTime(item.startAt)} ~{' '}
-            {formatDateTime(item.endAt)}
+            {formatDateTime(item.startAt)} - {formatDateTime(item.endAt)}
           </ThemedText>
         </ThemedView>
       </Pressable>
@@ -98,7 +102,7 @@ export default function CalendarListScreen() {
     return (
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
-          <ThemedText type="subtitle">Loading calendar events...</ThemedText>
+          <ThemedText type="subtitle">Loading calendar...</ThemedText>
         </SafeAreaView>
       </ThemedView>
     );
@@ -110,7 +114,7 @@ export default function CalendarListScreen() {
         <ThemedView style={styles.header}>
           <ThemedText type="subtitle">Calendar</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {period.from} ~ {period.to}
+            {period.from} - {period.to}
           </ThemedText>
           <ThemedView style={styles.refreshButton}>
             <Button title="Current month" onPress={handleResetCurrentMonth} />
@@ -213,6 +217,12 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     gap: Spacing.two,
     padding: Spacing.three,
+  },
+  eventHeader: {
+    alignItems: 'flex-start',
+  },
+  eventType: {
+    color: '#2563eb',
   },
   messageBox: {
     borderRadius: Spacing.three,

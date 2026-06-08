@@ -1,6 +1,6 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Button, Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getPoll, getPollResult, PollDetail, PollResult, votePoll } from '@/api/polls';
@@ -29,7 +29,7 @@ export default function PollDetailScreen() {
   const loadPoll = useCallback(async () => {
     if (!pollId) {
       setPoll(null);
-      setErrorMessage('Invalid poll ID.');
+      setErrorMessage('This poll link is not valid.');
       setIsPollLoading(false);
       return;
     }
@@ -48,7 +48,7 @@ export default function PollDetailScreen() {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Failed to load poll detail.');
+        setErrorMessage('Poll detail could not be loaded.');
       }
     } finally {
       setIsPollLoading(false);
@@ -72,7 +72,7 @@ export default function PollDetailScreen() {
 
   async function handleVote() {
     if (!pollId || !selectedOptionId) {
-      setErrorMessage('Select an option.');
+      setErrorMessage('Select one option before voting.');
       return;
     }
 
@@ -86,12 +86,12 @@ export default function PollDetailScreen() {
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 409) {
-          setErrorMessage('이미 투표에 참여했습니다. 결과 확인을 눌러 확인해보세요.');
+          setErrorMessage('You already voted in this poll. Open results to check what is available.');
         } else {
           setErrorMessage(error.message);
         }
       } else {
-        setErrorMessage('투표를 제출하지 못했습니다.');
+        setErrorMessage('Your vote could not be submitted. Please try again.');
       }
     } finally {
       setIsSubmitting(false);
@@ -112,14 +112,14 @@ export default function PollDetailScreen() {
       setResult(null);
 
       if (error instanceof ApiError && error.status === 403) {
-        setResultMessage('아직 결과를 볼 수 없습니다.');
+        setResultMessage('Results are not visible yet. Please check again after the poll is closed or published.');
         return;
       }
 
       if (error instanceof ApiError) {
         setResultMessage(error.message);
       } else {
-        setResultMessage('투표 결과를 불러오지 못했습니다.');
+        setResultMessage('Poll results could not be loaded.');
       }
     }
   }
@@ -142,7 +142,7 @@ export default function PollDetailScreen() {
     return (
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
-          <ThemedText type="subtitle">투표를 불러오는 중...</ThemedText>
+          <ThemedText type="subtitle">Loading poll...</ThemedText>
         </SafeAreaView>
       </ThemedView>
     );
@@ -154,9 +154,11 @@ export default function PollDetailScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
-          <ThemedView style={styles.buttonWrap}>
-            <Button title="Back" onPress={handleBack} />
-          </ThemedView>
+          <Pressable style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]} onPress={handleBack}>
+            <ThemedText type="smallBold" style={styles.secondaryButtonText}>
+              Back
+            </ThemedText>
+          </Pressable>
 
           {errorMessage && (
             <ThemedView type="backgroundElement" style={styles.messageBox}>
@@ -168,16 +170,31 @@ export default function PollDetailScreen() {
 
           {poll && (
             <>
-              <ThemedText type="subtitle">{poll.title}</ThemedText>
+              <ThemedView style={styles.header}>
+                <ThemedView style={[styles.badge, poll.status === 'OPEN' ? styles.openBadge : styles.closedBadge]}>
+                  <ThemedText
+                    type="smallBold"
+                    style={poll.status === 'OPEN' ? styles.openBadgeText : styles.closedBadgeText}>
+                    {poll.status}
+                  </ThemedText>
+                </ThemedView>
+                <ThemedText type="subtitle" style={styles.title}>
+                  {poll.title}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {formatDateTime(poll.startsAt)} - {formatDateTime(poll.endsAt)}
+                </ThemedText>
+              </ThemedView>
+
               <ThemedView type="backgroundElement" style={styles.card}>
-                <ThemedText>{poll.description ?? 'No description'}</ThemedText>
-                <ThemedText type="small">Status: {poll.status}</ThemedText>
-                <ThemedText type="small">Starts: {formatDateTime(poll.startsAt)}</ThemedText>
-                <ThemedText type="small">Ends: {formatDateTime(poll.endsAt)}</ThemedText>
-                <ThemedText type="small">Voted: {poll.hasVoted ? 'Yes' : 'No'}</ThemedText>
+                <ThemedText>{poll.description ?? 'No description was provided.'}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Your status: {poll.hasVoted ? 'Voted' : 'Not voted'}
+                </ThemedText>
               </ThemedView>
 
               <ThemedView style={styles.options}>
+                <ThemedText type="smallBold">Choose an option</ThemedText>
                 {poll.options.map((option) => {
                   const selected = option.id === selectedOptionId;
                   return (
@@ -186,13 +203,12 @@ export default function PollDetailScreen() {
                       disabled={!canVote}
                       style={({ pressed }) => [
                         styles.option,
-                        { backgroundColor: selected ? '#2563eb' : theme.backgroundElement },
+                        { backgroundColor: selected ? '#2563eb' : '#ffffff', borderColor: selected ? '#2563eb' : '#e2e8f0' },
+                        !canVote && styles.disabledOption,
                         pressed && styles.pressed,
                       ]}
                       onPress={() => setSelectedOptionId(option.id)}>
-                      <ThemedText
-                        type="smallBold"
-                        style={selected ? styles.selectedText : undefined}>
+                      <ThemedText type="smallBold" style={selected ? styles.selectedText : undefined}>
                         {option.text}
                       </ThemedText>
                     </Pressable>
@@ -202,29 +218,36 @@ export default function PollDetailScreen() {
 
               {role === 'ADMIN' && (
                 <ThemedView type="backgroundElement" style={styles.messageBox}>
-                  <ThemedText type="small">관리자는 투표할 수 없습니다.</ThemedText>
+                  <ThemedText type="small">Administrators cannot participate in student polls.</ThemedText>
                 </ThemedView>
               )}
 
               {role === 'STUDENT' && poll.hasVoted && (
                 <ThemedView type="backgroundElement" style={styles.messageBox}>
-                  <ThemedText type="small">이미 투표에 참여했습니다.</ThemedText>
+                  <ThemedText type="small">You already voted in this poll.</ThemedText>
                 </ThemedView>
               )}
 
               {canVote && (
-                <ThemedView style={styles.buttonWrap}>
-                  <Button
-                    title={isSubmitting ? '제출 중...' : '투표하기'}
-                    onPress={handleVote}
-                    disabled={isSubmitting}
-                  />
-                </ThemedView>
+                <Pressable
+                  disabled={isSubmitting}
+                  style={({ pressed }) => [
+                    styles.primaryButton,
+                    isSubmitting && styles.disabledButton,
+                    pressed && !isSubmitting && styles.pressed,
+                  ]}
+                  onPress={handleVote}>
+                  <ThemedText type="smallBold" style={styles.primaryButtonText}>
+                    {isSubmitting ? 'Submitting...' : 'Vote'}
+                  </ThemedText>
+                </Pressable>
               )}
 
-              <ThemedView style={styles.buttonWrap}>
-                <Button title="결과 확인" onPress={handleLoadResult} />
-              </ThemedView>
+              <Pressable style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressed]} onPress={handleLoadResult}>
+                <ThemedText type="smallBold" style={styles.secondaryActionText}>
+                  Check results
+                </ThemedText>
+              </Pressable>
 
               {resultMessage && (
                 <ThemedView type="backgroundElement" style={styles.messageBox}>
@@ -235,11 +258,21 @@ export default function PollDetailScreen() {
               {result && (
                 <ThemedView type="backgroundElement" style={styles.card}>
                   <ThemedText type="smallBold">Results</ThemedText>
-                  <ThemedText type="small">Total votes: {result.totalVotes}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Total votes: {result.totalVotes}
+                  </ThemedText>
                   {result.options.map((option) => (
-                    <ThemedText key={option.optionId} type="small">
-                      {option.text}: {option.voteCount} ({option.percentage.toFixed(1)}%)
-                    </ThemedText>
+                    <ThemedView key={option.optionId} style={styles.resultRow}>
+                      <ThemedView style={styles.resultLabelRow}>
+                        <ThemedText type="smallBold">{option.text}</ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          {option.voteCount} votes, {option.percentage.toFixed(1)}%
+                        </ThemedText>
+                      </ThemedView>
+                      <ThemedView style={styles.progressTrack}>
+                        <ThemedView style={[styles.progressFill, { width: `${Math.min(option.percentage, 100)}%` }]} />
+                      </ThemedView>
+                    </ThemedView>
                   ))}
                 </ThemedView>
               )}
@@ -292,24 +325,80 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     padding: Spacing.four,
   },
+  header: {
+    gap: Spacing.two,
+  },
+  title: {
+    fontSize: 30,
+    lineHeight: 38,
+  },
   card: {
     borderRadius: Spacing.three,
-    gap: Spacing.one,
+    gap: Spacing.two,
     padding: Spacing.three,
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
+  },
+  openBadge: {
+    backgroundColor: '#dcfce7',
+  },
+  closedBadge: {
+    backgroundColor: '#f1f5f9',
+  },
+  openBadgeText: {
+    color: '#15803d',
+  },
+  closedBadgeText: {
+    color: '#475569',
   },
   options: {
     gap: Spacing.two,
   },
   option: {
     borderRadius: Spacing.three,
+    borderWidth: 1,
     padding: Spacing.three,
+  },
+  disabledOption: {
+    opacity: 0.72,
   },
   selectedText: {
     color: '#ffffff',
   },
-  buttonWrap: {
+  primaryButton: {
+    alignItems: 'center',
+    backgroundColor: '#2563eb',
     borderRadius: Spacing.three,
-    overflow: 'hidden',
+    padding: Spacing.three,
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+  },
+  secondaryButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#e0f2fe',
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+  },
+  secondaryButtonText: {
+    color: '#0369a1',
+  },
+  secondaryAction: {
+    alignItems: 'center',
+    backgroundColor: '#eef2ff',
+    borderRadius: Spacing.three,
+    padding: Spacing.three,
+  },
+  secondaryActionText: {
+    color: '#3730a3',
+  },
+  disabledButton: {
+    backgroundColor: '#94a3b8',
   },
   messageBox: {
     borderRadius: Spacing.three,
@@ -317,6 +406,28 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#dc2626',
+  },
+  resultRow: {
+    backgroundColor: 'transparent',
+    gap: Spacing.one,
+  },
+  resultLabelRow: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    flexDirection: 'row',
+    gap: Spacing.two,
+    justifyContent: 'space-between',
+  },
+  progressTrack: {
+    backgroundColor: '#e2e8f0',
+    borderRadius: 999,
+    height: 10,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    backgroundColor: '#2563eb',
+    borderRadius: 999,
+    height: 10,
   },
   pressed: {
     opacity: 0.75,

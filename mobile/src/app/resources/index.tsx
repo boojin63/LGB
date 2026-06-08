@@ -27,7 +27,7 @@ export default function ResourceListScreen() {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage('Failed to load resources.');
+        setErrorMessage('Resources could not be loaded. Check the backend and try again.');
       }
     } finally {
       setIsInitialLoading(false);
@@ -53,11 +53,14 @@ export default function ResourceListScreen() {
   function renderResource({ item }: { item: ResourceItem }) {
     return (
       <ThemedView type="backgroundElement" style={styles.card}>
+        <ThemedView type="backgroundElement" style={styles.cardHeader}>
+          <ThemedText type="smallBold" style={item.active ? styles.activeText : styles.inactiveText}>
+            {item.active ? 'ACTIVE' : 'INACTIVE'}
+          </ThemedText>
+        </ThemedView>
         <ThemedText type="smallBold">{item.name}</ThemedText>
-        <ThemedText type="small">ID: {item.id}</ThemedText>
         <ThemedText type="small">Type: {item.type}</ThemedText>
         <ThemedText type="small">Location: {item.location ?? 'No location'}</ThemedText>
-        <ThemedText type="small">Active: {item.active ? 'Yes' : 'No'}</ThemedText>
       </ThemedView>
     );
   }
@@ -132,8 +135,17 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: Spacing.three,
-    gap: Spacing.one,
+    gap: Spacing.two,
     padding: Spacing.three,
+  },
+  cardHeader: {
+    alignItems: 'flex-start',
+  },
+  activeText: {
+    color: '#15803d',
+  },
+  inactiveText: {
+    color: '#b91c1c',
   },
   messageBox: {
     borderRadius: Spacing.three,
